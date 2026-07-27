@@ -13,8 +13,7 @@ class SynthCVChatbot {
     this.responses = {
       greeting: [
         "Hello! I'm SynthCV Assistant. How can I help you with your resume today?",
-        "Hi there! Ready to build an amazing resume? What can I assist you with?",
-        "Welcome to SynthCV! I'm here to help you create the perfect resume. What would you like to know?"
+        
       ],
       templates: [
         "We offer 4 beautiful resume templates: Modern (clean & professional), Classic (traditional style), Creative (unique design), and Minimal (simple & elegant). You can choose any template in the Resume Builder!",
