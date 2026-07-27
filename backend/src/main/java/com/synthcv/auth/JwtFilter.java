@@ -1,5 +1,7 @@
 package com.synthcv.auth;
 
+import com.synthcv.auth.User;
+import com.synthcv.auth.UserRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -7,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -17,9 +20,11 @@ import java.util.List;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
-    public JwtFilter(JwtUtil jwtUtil) {
+    public JwtFilter(JwtUtil jwtUtil, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -35,9 +40,15 @@ public class JwtFilter extends OncePerRequestFilter {
                 Long id = claims.get("id", Long.class);
                 String email = claims.get("email", String.class);
 
-                AuthenticatedUser principal = new AuthenticatedUser(id, email);
+                User user = userRepository.findById(id)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
+                // Optionally, we can also check if the email matches
+                if (!user.getEmail().equals(email)) {
+                    throw new UsernameNotFoundException("User email does not match token");
+                }
+
                 UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(principal, null, List.of());
+                        new UsernamePasswordAuthenticationToken(user, null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }
