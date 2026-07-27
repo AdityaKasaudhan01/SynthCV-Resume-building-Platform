@@ -1,5 +1,6 @@
 package com.synthcv.auth;
 
+import com.synthcv.resume.ResumeContactInfo;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -23,6 +24,10 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    // Bidirectional relationship with ResumeContactInfo
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private ResumeContactInfo resumeContactInfo;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -36,4 +41,13 @@ public class User {
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+
+    // Getter and setter for resumeContactInfo
+    public ResumeContactInfo getResumeContactInfo() { return resumeContactInfo; }
+    public void setResumeContactInfo(ResumeContactInfo resumeContactInfo) {
+        this.resumeContactInfo = resumeContactInfo;
+        if (resumeContactInfo != null) {
+            resumeContactInfo.setUser(this);
+        }
+    }
 }

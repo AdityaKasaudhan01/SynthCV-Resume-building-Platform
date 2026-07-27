@@ -115,7 +115,7 @@ class SynthCVChatbot {
   createChatbotHTML() {
     const chatbotHTML = `
       <div class="chatbot-container" id="chatbotContainer">
-        <button class="chatbot-toggle" id="chatbotToggle"><img src="../../assets/images/clogo.jpg" alt="SynthCV Chatbot" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></button>
+        <button class="chatbot-toggle" id="chatbotToggle"><img src="../assets/images/clogo.jpg" alt="SynthCV Chatbot" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></button>
         <div class="chatbot-window" id="chatbotWindow">
           <div class="chatbot-header">
             <span>SynthCV Assistant</span>

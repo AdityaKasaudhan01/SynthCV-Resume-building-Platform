@@ -362,10 +362,21 @@
         color: #2e2e2e;
       }
 
-      .preview-contact {
-        color: #666;
-        margin-bottom: 20px;
-      }
+       .preview-contact {
+         color: #666;
+         margin-bottom: 20px;
+         font-size: 14px;
+       }
+       
+       .preview-contact a {
+         color: #0066FF;
+         text-decoration: none;
+         word-break: break-all;
+       }
+       
+       .preview-contact a:hover {
+         text-decoration: underline;
+       }
 
       .preview-section-title {
         font-size: 16px;
@@ -604,16 +615,31 @@
             <input type="text" class="form-control" id="fullName" placeholder="John Doe">
           </div>
           <div class="form-group">
-            <label>Email</label>
-            <input type="email" class="form-control" id="email" placeholder="john@example.com">
+            <label>Email Address</label>
+            <div style="display: flex; gap: 5px; align-items: center;">
+              <input type="email" class="form-control" id="email" placeholder="john.doe@example.com" style="flex: 1;">
+              <button type="button" id="copyEmailBtn" title="Copy email" style="background: #f0f0f0; border: 1px solid #ddd; border-radius: 4px; padding: 5px 8px; cursor: pointer; font-size: 14px;">📋</button>
+            </div>
           </div>
           <div class="form-group">
-            <label>Phone</label>
-            <input type="tel" class="form-control" id="phone" placeholder="(555) 123-4567">
+            <label>Phone Number</label>
+            <input type="tel" class="form-control" id="phone" placeholder="+1 (555) 123-4567">
           </div>
           <div class="form-group">
-            <label>Address</label>
-            <input type="text" class="form-control" id="address" placeholder="City, State, ZIP">
+            <label>Location/City</label>
+            <input type="text" class="form-control" id="location" placeholder="New York, NY">
+          </div>
+          <div class="form-group">
+            <label>LinkedIn Profile URL</label>
+            <input type="url" class="form-control" id="linkedin" placeholder="https://linkedin.com/in/johndoe">
+          </div>
+          <div class="form-group">
+            <label>GitHub Profile URL</label>
+            <input type="url" class="form-control" id="github" placeholder="https://github.com/johndoe">
+          </div>
+          <div class="form-group">
+            <label>Portfolio/Website URL (Optional)</label>
+            <input type="url" class="form-control" id="portfolio" placeholder="https://yourportfolio.com">
           </div>
           <div class="form-group">
             <label>Profile Summary</label>
@@ -908,24 +934,291 @@
         });
       });
 
-      // Real-time preview updates
-      document.addEventListener('input', updatePreview);
-      document.addEventListener('change', updatePreview);
+       // Real-time preview updates
+       document.addEventListener('input', updatePreview);
+       document.addEventListener('change', updatePreview);
+
+       // Phone number formatting
+       document.getElementById('phone').addEventListener('input', function(e) {
+         formatPhoneNumber(e.target);
+         updatePreview(); // Update preview as user types
+       });
+
+       // URL normalization for LinkedIn, GitHub, and Portfolio
+       document.getElementById('linkedin').addEventListener('blur', function(e) {
+         normalizeUrl(e.target);
+         updatePreview(); // Update preview when user leaves field
+       });
+       
+       document.getElementById('github').addEventListener('blur', function(e) {
+         normalizeUrl(e.target);
+         updatePreview(); // Update preview when user leaves field
+       });
+       
+       document.getElementById('portfolio').addEventListener('blur', function(e) {
+         normalizeUrl(e.target);
+         updatePreview(); // Update preview when user leaves field
+       });
+
+       // Copy email button
+       document.getElementById('copyEmailBtn').addEventListener('click', copyEmailToClipboard);
 
       function updatePreview() {
         console.log('updatePreview called');
 
-        // Personal details
+        // Helper function for authenticated fetch
+       function authFetch(url, options = {}) {
+         const token = localStorage.getItem('token');
+         const headers = new Headers(options.headers || {});
+         if (token) {
+           headers.set('Authorization', `Bearer ${token}`);
+         }
+         return fetch(url, {
+           ...options,
+           headers: headers
+         });
+       }
+
+       // Load contact information from backend if user is authenticated
+       function loadContactInfo() {
+         const token = localStorage.getItem('token');
+         if (!token) return;
+
+         authFetch('/api/resume/contact')
+           .then(response => {
+             if (!response.ok) {
+               throw new Error('Failed to load contact information');
+             }
+             return response.json();
+           })
+           .then(data => {
+             // Populate form fields with loaded data
+             if (data.email) document.getElementById('email').value = data.email;
+             if (data.phoneNumber) document.getElementById('phone').value = data.phoneNumber;
+             if (data.location) document.getElementById('location').value = data.location;
+             if (data.linkedinUrl) document.getElementById('linkedin').value = data.linkedinUrl;
+             if (data.githubUrl) document.getElementById('github').value = data.githubUrl;
+             if (data.portfolioUrl) document.getElementById('portfolio').value = data.portfolioUrl;
+             // Update preview after loading
+             updatePreview();
+           })
+           .catch(error => {
+             console.error('Error loading contact information:', error);
+             // Optionally clear token if unauthorized
+             if (error.message.includes('Failed to load')) {
+               // localStorage.removeItem('token');
+               // localStorage.removeItem('user');
+               // window.location.href = 'login.html';
+             }
+           });
+       }
+
+       // Save contact information to backend if user is authenticated
+       function saveContactInfoToBackend() {
+         const token = localStorage.getItem('token');
+         if (!token) return;
+
+         const contactInfo = {
+           email: document.getElementById('email').value,
+           phoneNumber: document.getElementById('phone').value,
+           location: document.getElementById('location').value,
+           linkedinUrl: document.getElementById('linkedin').value,
+           githubUrl: document.getElementById('github').value,
+           portfolioUrl: document.getElementById('portfolio').value
+         };
+
+         authFetch('/api/resume/contact', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json'
+           },
+           body: JSON.stringify(contactInfo)
+         })
+         .then(response => {
+           if (!response.ok) {
+             throw new Error('Failed to save contact information');
+           }
+           return response.json();
+         })
+         .then(data => {
+           console.log('Contact information saved successfully:', data);
+         })
+         .catch(error => {
+           console.error('Error saving contact information:', error);
+         });
+       }
+
+       // Format phone number as user types
+       function formatPhoneNumber(input) {
+         // Remove all non-digit characters
+         let digits = input.value.replace(/\D/g, '');
+         
+         // Limit to 10 digits (for US-style numbers) or more for international
+         // We'll allow up to 15 digits for international numbers
+         if (digits.length > 15) {
+           digits = digits.slice(0, 15);
+         }
+         
+         // Format as (XXX) XXX-XXXX for 10 digits, or +X (XXX) XXX-XXXX for 11 digits, etc.
+         // For simplicity, we'll just add spaces for readability in common formats
+         if (digits.length === 0) {
+           input.value = '';
+           return;
+         }
+         
+         // If starts with 1 and 11 digits, treat as US with country code
+         if (digits.length === 11 && digits[0] === '1') {
+           digits = digits.slice(1); // Remove the leading 1
+         }
+         
+         // Format the remaining digits
+         if (digits.length <= 3) {
+           input.value = digits;
+         } else if (digits.length <= 6) {
+           input.value = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+         } else if (digits.length <= 10) {
+           input.value = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+         } else {
+           // For longer numbers, just show first 10 formatted and the rest
+           const main = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+           const extra = digits.slice(10);
+           input.value = `${main} ${extra}`;
+         }
+       }
+
+       // Normalize URL (add https:// if missing)
+       function normalizeUrl(input) {
+         let value = input.value.trim();
+         if (value === '') {
+           return;
+         }
+         
+         // If doesn't start with http:// or https://, add https://
+         if (!value.startsWith('http://') && !value.startsWith('https://')) {
+           // Check if it looks like a domain (contains a dot and no spaces)
+           if (value.includes('.') && !value.includes(' ') && !value.startsWith('.')) {
+             input.value = 'https://' + value;
+           }
+         }
+       }
+
+       // Copy email to clipboard
+       function copyEmailToClipboard() {
+         var emailInput = document.getElementById('email');
+         var email = emailInput.value.trim();
+         if (!email) {
+           alert('Email is empty');
+           return;
+         }
+
+         if (navigator.clipboard && window.isSecureContext) {
+           navigator.clipboard.writeText(email).then(function() {
+             var btn = document.getElementById('copyEmailBtn');
+             var originalContent = btn.textContent;
+             btn.textContent = '✓';
+             btn.style.color = '#28a745';
+             setTimeout(function() {
+               btn.textContent = originalContent;
+               btn.style.color = '';
+             }, 1500);
+           }).catch(function(err) {
+             console.error('Failed to copy: ', err);
+             fallbackCopyToClipboard(email);
+           });
+         } else {
+           fallbackCopyToClipboard(email);
+         }
+       }
+
+       // Fallback copy method for non-secure contexts
+       function fallbackCopyToClipboard(text) {
+         var textArea = document.createElement('textarea');
+         textArea.value = text;
+         textArea.style.position = 'fixed';
+         textArea.style.left = '-9999px';
+         document.body.appendChild(textArea);
+         textArea.select();
+         try {
+           document.execCommand('copy');
+           var btn = document.getElementById('copyEmailBtn');
+           var originalContent = btn.textContent;
+           btn.textContent = '✓';
+           btn.style.color = '#28a745';
+           setTimeout(function() {
+             btn.textContent = originalContent;
+             btn.style.color = '';
+           }, 1500);
+         } catch (err) {
+           alert('Failed to copy email. Please copy manually.');
+         }
+         document.body.removeChild(textArea);
+       }
+
+       // Personal details
         const fullName = document.getElementById('fullName').value || 'Your Name';
-        const email = document.getElementById('email').value || 'email@example.com';
-        const phone = document.getElementById('phone').value || '(555) 123-4567';
-        const address = document.getElementById('address').value || 'City, State, ZIP';
+        const email = document.getElementById('email').value;
+        const phone = document.getElementById('phone').value;
+        const location = document.getElementById('location').value;
+        const linkedin = document.getElementById('linkedin').value;
+        const github = document.getElementById('github').value;
+        const portfolio = document.getElementById('portfolio').value;
         const summary = document.getElementById('summary').value || 'Professional summary will appear here...';
 
-        console.log('Personal details:', { fullName, email, phone, address, summary });
+        console.log('Personal details:', { fullName, email, phone, location, linkedin, github, portfolio, summary });
 
         document.getElementById('previewName').textContent = fullName;
-        document.getElementById('previewContact').innerHTML = `${email} | ${phone}<br>${address}`;
+        
+        // Build contact line with conditional rendering
+        let contactParts = [];
+        
+        // Add location if provided
+        if (location) {
+            contactParts.push(location);
+        }
+        
+        // Add email as mailto link if provided
+        if (email) {
+            contactParts.push(`<a href="mailto:${email}">${email}</a>`);
+        }
+        
+        // Add phone if provided
+        if (phone) {
+            contactParts.push(phone);
+        }
+        
+        // Add LinkedIn as link if provided
+        if (linkedin) {
+            // Normalize URL - add https:// if missing
+            let linkedinUrl = linkedin.trim();
+            if (!linkedinUrl.startsWith('http://') && !linkedinUrl.startsWith('https://')) {
+                linkedinUrl = 'https://' + linkedinUrl;
+            }
+            contactParts.push(`<a href="${linkedinUrl}" target="_blank" rel="noopener noreferrer">LinkedIn</a>`);
+        }
+        
+        // Add GitHub as link if provided
+        if (github) {
+            // Normalize URL - add https:// if missing
+            let githubUrl = github.trim();
+            if (!githubUrl.startsWith('http://') && !githubUrl.startsWith('https://')) {
+                githubUrl = 'https://' + githubUrl;
+            }
+            contactParts.push(`<a href="${githubUrl}" target="_blank" rel="noopener noreferrer">GitHub</a>`);
+        }
+        
+        // Add portfolio as link if provided
+        if (portfolio) {
+            // Normalize URL - add https:// if missing
+            let portfolioUrl = portfolio.trim();
+            if (!portfolioUrl.startsWith('http://') && !portfolioUrl.startsWith('https://')) {
+                portfolioUrl = 'https://' + portfolioUrl;
+            }
+            contactParts.push(`<a href="${portfolioUrl}" target="_blank" rel="noopener noreferrer">Portfolio</a>`);
+        }
+        
+        // Join all parts with " | " separator and set innerHTML
+        document.getElementById('previewContact').innerHTML = contactParts.length > 0 ? contactParts.join(' | ') : '';
+        
         document.getElementById('previewSummary').textContent = summary;
 
         // Work Experience
@@ -1208,86 +1501,101 @@
         updatePreview();
       }
 
-      // Save resume
-      function saveResume() {
-        const resumeData = {
-          id: Date.now(),
-          name: document.getElementById('fullName').value || 'Untitled Resume',
-          date: new Date().toLocaleDateString(),
-          personalDetails: {
-            fullName: document.getElementById('fullName').value,
-            email: document.getElementById('email').value,
-            phone: document.getElementById('phone').value,
-            address: document.getElementById('address').value,
-            summary: document.getElementById('summary').value
-          },
-          education: {
-            schoolName: document.getElementById('schoolName').value,
-            schoolLocation: document.getElementById('schoolLocation').value,
-            degree: document.getElementById('degree').value,
-            fieldOfStudy: document.getElementById('fieldOfStudy').value,
-            startDate: document.getElementById('startDate').value,
-            endDate: document.getElementById('endDate').value
-          },
-          skills: localStorage.getItem('skillsData') || '',
-          projects: JSON.parse(localStorage.getItem('projectsData') || '[]'),
-          certifications: JSON.parse(localStorage.getItem('certsData') || '[]'),
-          workExperience: Array.from(document.querySelectorAll('#work-experience-list .entry-item')).map(entry => {
-            const inputs = entry.querySelectorAll('input');
-            return {
-              jobTitle: inputs[0]?.value || '',
-              company: inputs[1]?.value || '',
-              startDate: inputs[2]?.value || '',
-              endDate: inputs[3]?.value || '',
-              description: entry.querySelector('textarea')?.value || ''
-            };
-          })
-        };
+       // Save resume
+       function saveResume() {
+         const resumeData = {
+           id: Date.now(),
+           name: document.getElementById('fullName').value || 'Untitled Resume',
+           date: new Date().toLocaleDateString(),
+           personalDetails: {
+             fullName: document.getElementById('fullName').value,
+             email: document.getElementById('email').value,
+             phone: document.getElementById('phone').value,
+             location: document.getElementById('location').value,
+             linkedin: document.getElementById('linkedin').value,
+             github: document.getElementById('github').value,
+             portfolio: document.getElementById('portfolio').value,
+             summary: document.getElementById('summary').value
+           },
+           education: {
+             schoolName: document.getElementById('schoolName').value,
+             schoolLocation: document.getElementById('schoolLocation').value,
+             degree: document.getElementById('degree').value,
+             fieldOfStudy: document.getElementById('fieldOfStudy').value,
+             startDate: document.getElementById('startDate').value,
+             endDate: document.getElementById('endDate').value
+           },
+           skills: localStorage.getItem('skillsData') || '',
+           projects: JSON.parse(localStorage.getItem('projectsData') || '[]'),
+           certifications: JSON.parse(localStorage.getItem('certsData') || '[]'),
+           workExperience: Array.from(document.querySelectorAll('#work-experience-list .entry-item')).map(entry => {
+             const inputs = entry.querySelectorAll('input');
+             return {
+               jobTitle: inputs[0]?.value || '',
+               company: inputs[1]?.value || '',
+               startDate: inputs[2]?.value || '',
+               endDate: inputs[3]?.value || '',
+               description: entry.querySelector('textarea')?.value || ''
+             };
+           })
+         };
 
-        const resumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
-        resumes.push(resumeData);
-        localStorage.setItem('savedResumes', JSON.stringify(resumes));
-        alert('Resume saved successfully!');
-      }
+         const resumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+         resumes.push(resumeData);
+         localStorage.setItem('savedResumes', JSON.stringify(resumes));
+         alert('Resume saved successfully!');
+         
+         // Also save to backend if user is authenticated
+         saveContactInfoToBackend();
+       }
 
-      // Download resume
-      function downloadResume() {
-        const resumeElement = document.getElementById('resumePreview');
+       // Download resume
+       function downloadResume() {
+         const resumeElement = document.getElementById('resumePreview');
 
-        // Create a clone of the resume for PDF generation
-        const resumeClone = resumeElement.cloneNode(true);
+         // Create a clone of the resume for PDF generation
+         const resumeClone = resumeElement.cloneNode(true);
 
-        // Apply current styles to the clone
-        applyCurrentStylesToClone(resumeClone);
+         // Apply current styles to the clone
+         applyCurrentStylesToClone(resumeClone);
 
-        // Remove any unwanted styles or elements if needed
-        resumeClone.style.width = '210mm'; // A4 width
-        resumeClone.style.maxWidth = '210mm';
-        resumeClone.style.padding = '20mm';
-        resumeClone.style.boxSizing = 'border-box';
-        resumeClone.style.background = 'white';
-        resumeClone.style.color = 'black';
+         // Remove any unwanted styles or elements if needed
+         resumeClone.style.width = '210mm'; // A4 width
+         resumeClone.style.maxWidth = '210mm';
+         resumeClone.style.padding = '20mm';
+         resumeClone.style.boxSizing = 'border-box';
+         resumeClone.style.background = 'white';
+         resumeClone.style.color = 'black';
 
-        // Configure PDF options
-        const options = {
-          margin: 0,
-          filename: 'resume.pdf',
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            letterRendering: true
-          },
-          jsPDF: {
-            unit: 'mm',
-            format: 'a4',
-            orientation: 'portrait'
-          }
-        };
+         // Ensure links are clickable in PDF by preserving their href attributes
+         // The html2pdf library should handle this, but we'll make sure links are preserved
+         const links = resumeClone.querySelectorAll('a');
+         links.forEach(link => {
+           // Ensure target and rel attributes are set for proper PDF behavior
+           link.setAttribute('target', '_blank');
+           link.setAttribute('rel', 'noopener noreferrer');
+         });
 
-        // Generate and download PDF
-        html2pdf().set(options).from(resumeClone).save();
-      }
+         // Configure PDF options
+         const options = {
+           margin: 0,
+           filename: 'resume.pdf',
+           image: { type: 'jpeg', quality: 0.98 },
+           html2canvas: {
+             scale: 2,
+             useCORS: true,
+             letterRendering: true
+           },
+           jsPDF: {
+             unit: 'mm',
+             format: 'a4',
+             orientation: 'portrait'
+           }
+         };
+
+         // Generate and download PDF
+         html2pdf().set(options).from(resumeClone).save();
+       }
 
       // Apply current styles to PDF clone
       function applyCurrentStylesToClone(clone) {
@@ -1415,10 +1723,13 @@
         }
       }
 
-      loadData();
+       loadData();
 
-      // Initialize preview
-      updatePreview();
+       // Load contact information from backend if user is authenticated
+       loadContactInfo();
+
+       // Initialize preview
+       updatePreview();
 
       // Handle URL template parameter
       const urlParams = new URLSearchParams(window.location.search);
