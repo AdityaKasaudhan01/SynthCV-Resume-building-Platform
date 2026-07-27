@@ -97,9 +97,9 @@ public class AuthController {
         ));
     }
 
-    // GET /api/auth  (protected)
+// GET /api/auth  (protected)
     @GetMapping("/auth")
-    public ResponseEntity<?> checkAuth(@AuthenticationPrincipal AuthenticatedUser principal) {
+    public ResponseEntity<?> checkAuth(@AuthenticationPrincipal User principal) {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Access token required"));
         }
@@ -111,7 +111,7 @@ public class AuthController {
 
         User user = optUser.get();
         return ResponseEntity.ok(Map.of(
-            "user", Map.of("id", user.getId(), "name", user.getName(), "email", user.getEmail())
+                "user", Map.of("id", user.getId(), "name", user.getName(), "email", user.getEmail())
         ));
     }
 
