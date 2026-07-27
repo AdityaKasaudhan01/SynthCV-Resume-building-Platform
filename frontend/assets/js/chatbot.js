@@ -16,6 +16,10 @@ class SynthCVChatbot {
         "Hi there! Ready to build an amazing resume? What can I assist you with?",
         "Welcome to SynthCV! I'm here to help you create the perfect resume. What would you like to know?"
       ],
+      templatess: [
+        "We offer 4 beautiful resume templates: Modern (clean & professional), Classic (traditional style), Creative (unique design), and Minimal (simple & elegant). You can choose any template in the Resume Builder!",
+        "Our templates include Modern, Classic, Creative, and Minimal designs. Each one is fully customizable with different fonts and colors."
+      ],
       templates: [
         "We offer 4 beautiful resume templates: Modern (clean & professional), Classic (traditional style), Creative (unique design), and Minimal (simple & elegant). You can choose any template in the Resume Builder!",
         "Our templates include Modern, Classic, Creative, and Minimal designs. Each one is fully customizable with different fonts and colors."
