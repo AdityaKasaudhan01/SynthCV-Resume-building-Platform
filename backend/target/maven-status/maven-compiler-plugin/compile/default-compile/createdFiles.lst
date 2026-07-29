@@ -1,8 +1,0 @@
-com\synthcv\auth\AuthController.class
-com\synthcv\auth\AuthenticatedUser.class
-com\synthcv\auth\JwtFilter.class
-com\synthcv\auth\AuthApplication.class
-com\synthcv\auth\User.class
-com\synthcv\auth\UserRepository.class
-com\synthcv\auth\SecurityConfig.class
-com\synthcv\auth\JwtUtil.class
